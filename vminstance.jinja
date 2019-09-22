@@ -1,0 +1,40 @@
+resources:
+- type: compute.v1.instance
+  name: vm-test
+  properties:
+    zone: {{ properties["zone"] }}
+    machineType: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/zones/{{ properties["zone"] }}/machineTypes/f1-micro
+    # For examples on how to use startup scripts on an instance, see:
+    #   https://cloud.google.com/compute/docs/startupscript
+    serviceAccounts:
+      - email: default
+        scopes:
+          - https://www.googleapis.com/auth/devstorage.read_only
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        diskName: disk-{{ env["deployment"] }}
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/global/networks/default
+      # Access Config required to give the instance a public IP address
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    metadata:
+        items:
+        - key: startup-script-url
+          value: gs://qwiklabs-gcp-2550f89e56ead27e1/resources-install-web.sh
+    tags:
+      items: [hogefire]
+- type: compute.v1.firewall
+  name: hogefirewall
+  properties:
+    network: global/networks/default
+    targetTags: [hogefire]
+    allowed:
+    - IPProtocol: tcp
+      ports: ['80']
